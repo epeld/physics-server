@@ -8,14 +8,47 @@
    
 (use-foreign-library libode)
 
-;; Note: The definition of real depends on how ODE was compiled.
-;; Either float or double
-(defctype real :float)
+;;
+;; Info
+(defcfun ("dGetConfiguration" get-configuration) :string)
+
+(defun is-single-precision-p ()
+  (search "single_precision" (get-configuration)))
+
+;; Determine precision
+(if (is-single-precision-p)
+    (defctype ode-real :float)
+    (defctype ode-real :double))
+
 
 (defcstruct vector3 
-  (x real)
-  (y real)
-  (z real))
+  (x ode-real)
+  (y ode-real)
+  (z ode-real))
+
+
+;;
+;; Initialization
+
+(defbitfield init-flags
+  (:none 0)
+  :manual-cleanup)
+
+(defbitfield allocate-flags
+  (:basic 0)
+  (:collision #x00000001)
+  (:all #.(lognot 0)))
+
+
+(defcfun ("dInitODE2" init) :uint (flags init-flags))
+(defcfun ("dCloseODE" uninit) :void)
+
+(defcfun ("dAllocateODEDataForThread" allocate-data-for-thread) :uint (flags allocate-flags))
+
+;; Go ahead and initialize everything directly
+;; (assumes we are main thread)
+(init '(:none))
+(allocate-data-for-thread '(:all))
 
 ;;
 ;;  World API
@@ -29,25 +62,25 @@
 ;; Gravity
 (defcfun ("dWorldSetGravity" set-gravity) :void
   (world-id world-id)
-  (x real)
-  (y real)
-  (z real))
+  (x ode-real)
+  (y ode-real)
+  (z ode-real))
 
 (defcfun ("dWorldGetGravity" get-gravity) :void 
   (world-id world-id)
   (vector (:pointer vector3)))
 
 ;; ERP
-(defcfun ("dWorldSetERP" set-erp) :void (world-id world-id) (erp real))
-(defcfun ("dWorldGetERP" get-erp) real (world-id world-id))
+(defcfun ("dWorldSetERP" set-erp) :void (world-id world-id) (erp ode-real))
+(defcfun ("dWorldGetERP" get-erp) ode-real (world-id world-id))
 
 ;; CFM
-(defcfun ("dWorldSetCFM" set-cfm) :void (world-id world-id) (cfm real))
-(defcfun ("dWorldGetCFM" get-cfm) real (world-id world-id))
+(defcfun ("dWorldSetCFM" set-cfm) :void (world-id world-id) (cfm ode-real))
+(defcfun ("dWorldGetCFM" get-cfm) ode-real (world-id world-id))
 
 ;; Update / Stepping
-(defcfun ("dWorldStep" step-world) :void (world-id world-id) (step-size real))
-(defcfun ("dWorldQuickStep" quick-step-world) :void (world-id world-id) (step-size real))
+(defcfun ("dWorldStep" step-world) :void (world-id world-id) (step-size ode-real))
+(defcfun ("dWorldQuickStep" quick-step-world) :void (world-id world-id) (step-size ode-real))
 
 
 ;; 
