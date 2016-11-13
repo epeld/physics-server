@@ -13,31 +13,20 @@
 
 (defstruct vector3d x y z)
 
-;; TODO maybe we don't need these, maybe we can just use geom-ids directly
-;; and call dGeomGetBody to get the body-id instead
-(defclass object ()
-  ((body-id :accessor body-id :documentation "ODE BodyID handle")
-   (geom-id :accessor geom-id :documentation "ODE GeomID handle"))
-  (:documentation "A Physical Object that can interact with the rest of the simulation"))
-
-
-
-(defclass settings ()
-  ((step-size :accessor step-size :type :float))
-  (:documentation "Simulation settings"))
-
+;; TODO consider adding a joint group id for contact joints
 (defclass simulation ()
-  ((world-id :accessor world-id :documentaiton "ODE WorldID handle")
-   (space-id :accessor space-id :documentation "ODE SpaceID handle")
-   (objects :accessor simulation-objects :documentation "A list of objects")
-   (settings :accessor simulation-settings :type settings)))
+  ((world :accessor simulation-world :documentation "ODE WorldID handle")
+   (space :accessor simulation-space :documentation "ODE SpaceID handle")
+   (objects :accessor simulation-objects :documentation "A list of objects (geoms)")
+   (step-size :accessor simulation-step-size :type float)))
 
 
-(defun collide (simulation near-fn)
-  "Find collisions of objects inside the world, calling near-fn with those pairs of objects"
-  :todo)
+(defun collision-check (simulation)
+  "Perform collision checking, adding joints as needed"
+  (ode:space-collide (simulation-space simulation) simulation #'near-callback))
 
-(defun contacts (object1 object2 &optional (count 16))
+;; this is the callback when two objects are potentially colliding
+(defun near-callback (simulation object1 object2)
   "Generate contacts between object1 and object2"
   :todo)
 
@@ -45,6 +34,11 @@
   "Step the simulation forward"
   :todo)
 
+
+;; TODO define object creation functions:
+;; (make-box)
+;; (make-sphere)
+;; etc
 
 
 
