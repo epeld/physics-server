@@ -13,3 +13,8 @@
 (defpackage :peldan.ode
   (:nicknames :ode)
   (:use :cl :cffi))
+
+
+(defpackage :peldan.physics
+  (:nicknames :physics)
+  (:use :cl))
