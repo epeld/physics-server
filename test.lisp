@@ -20,11 +20,20 @@
     (defctype ode-real :float)
     (defctype ode-real :double))
 
+;;typedef dReal dVector3[4];
+;;typedef dReal dVector4[4];
+;;typedef dReal dMatrix3[4*3];
+;;typedef dReal dMatrix4[4*4];
+;;typedef dReal dMatrix6[8*6];
+;;typedef dReal dQuaternion[4];
 
 (defcstruct vector3 
   (x ode-real)
   (y ode-real)
   (z ode-real))
+
+(defcstruct matrix3
+  (value ode-real :count 12))
 
 
 ;;
@@ -129,6 +138,7 @@
   (geom-id geom-id)
   (body-id body-id))
 
+;; Position
 (defcfun ("dGeomSetPosition" set-geom-position) :void
   (geom-id geom-id)
   (x ode-real)
@@ -137,6 +147,16 @@
 
 (defcfun ("dGeomGetPosition" get-geom-position) (:pointer ode-real)
   (geom-id geom-id))
+
+
+;; Rotation
+(defcfun ("dGeomGetRotation" get-geom-rotation) (:pointer (:struct matrix3))
+  (geom-id geom-id))
+
+
+(defcfun ("dGeomSetRotation" set-geom-rotation) :void
+  (geom-id geom-id)
+  (r (:pointer (:struct matrix3))))
 
 ;; 
 ;; Space
@@ -152,3 +172,33 @@
 (defcfun ("dSpaceGetNumGeoms" get-num-geoms) :int (space-id space-id))
 (defcfun ("dSpaceGetGeom" get-geom) geom-id (space-id space-id) (index :int))
 
+;;
+;; Collision
+;;
+
+(defcfun ("dSpaceCollide" space-collide) :void
+  (space-id space-id)
+  (data :pointer)
+  (near-callback :pointer))
+
+;; TODO figure out contact geom format
+(defcfun ("dCollide" collide) :int
+  (o1 geom-id)
+  (o2 geom-id)
+  (flags :int)
+  (contact :pointer)
+  (skip :int))
+
+;;
+;;  Rotation
+;;
+
+(defcfun ("dRFromAxisAndAngle" rotation-around-axis) :void
+  (r (:pointer (:struct matrix3)))
+  (ax ode-real)
+  (ay ode-real)
+  (bz ode-real)
+  (angle ode-real))
+
+(defcfun ("dRSetIdentity" set-identity) :void
+  (r (:pointer (:struct matrix3))))
