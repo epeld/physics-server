@@ -53,7 +53,8 @@
 ;;
 ;;  World API
 ;; 
-(defctype world-id :pointer) 
+(defctype world-id :pointer)
+(defctype space-id :pointer)
 
 ;; Creation
 (defcfun ("dWorldCreate" create-world) world-id)
@@ -68,7 +69,7 @@
 
 (defcfun ("dWorldGetGravity" get-gravity) :void 
   (world-id world-id)
-  (vector (:pointer vector3)))
+  (vector (:pointer (:struct vector3))))
 
 ;; ERP
 (defcfun ("dWorldSetERP" set-erp) :void (world-id world-id) (erp ode-real))
@@ -82,19 +83,72 @@
 (defcfun ("dWorldStep" step-world) :void (world-id world-id) (step-size ode-real))
 (defcfun ("dWorldQuickStep" quick-step-world) :void (world-id world-id) (step-size ode-real))
 
+;;
+;; Body
+;; 
+(defctype body-id :pointer)
+
+(defcfun ("dBodyCreate" create-body) body-id
+  (world-id world-id))
+
+(defcfun ("dBodyDestroy" destroy-body) body-id
+  (body-id body-id))
+
+;;
+;; Geom
+;; 
+(defctype geom-id :pointer)
+
+;; Creation
+(defcfun ("dCreateBox" create-box) geom-id
+  (space-id space-id)
+  (x ode-real)
+  (y ode-real)
+  (z ode-real))
+
+(defcfun ("dCreateSphere" create-sphere) geom-id
+  (space-id space-id)
+  (radius ode-real))
+
+(defcfun ("dCreatePlane" create-plane) geom-id
+  (space-id space-id)
+  (a ode-real)
+  (b ode-real)
+  (c ode-real)
+  (d ode-real))
+
+(defcfun ("dGeomDestroy" destroy-geom) :void
+  (geom-id geom-id))
+
+
+;; Bodies
+(defcfun ("dGeomGetBody" get-geom-body) body-id
+  (geom-id geom-id))
+
+(defcfun ("dGeomSetBody" set-geom-body) :void
+  (geom-id geom-id)
+  (body-id body-id))
+
+(defcfun ("dGeomSetPosition" set-geom-position) :void
+  (geom-id geom-id)
+  (x ode-real)
+  (y ode-real)
+  (z ode-real))
+
+(defcfun ("dGeomGetPosition" get-geom-position) (:pointer ode-real)
+  (geom-id geom-id))
 
 ;; 
-;; Resource Management
+;; Space
 ;;
+;(defctype space-id :pointer)
 
+(defcfun ("dHashSpaceCreate" create-hash-space) space-id (space-id space-id))
 
-;; This is the managed world id!
-;; TODO define managed resources in a separate lisp file!
-;(defctype blub (:wrapper :pointer
-;                         :from-c pointer-to-id
-;                         :to-c id-to-pointer))
+(defcfun ("dSpaceAdd" add-geom-to-space) :void (space-id space-id) (geom-id geom-id))
+(defcfun ("dSpaceRemove" remove-geom-from-space) :void (space-id space-id) (geom-id geom-id))
+(defcfun ("dSpaceClean" clear-space) :void (space-id space-id))
 
-;(defcfun ("dWorldCreate" create-world-managed) blub)
-
-;(create-world-managed)
+(defcfun ("dSpaceGetNumGeoms" get-num-geoms) :int (space-id space-id))
+(defcfun ("dSpaceGetGeom" get-geom) geom-id (space-id space-id) (index :int))
 
