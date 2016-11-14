@@ -161,7 +161,6 @@
 ;; 
 ;; Space
 ;;
-;(defctype space-id :pointer)
 
 (defcfun ("dHashSpaceCreate" create-hash-space) space-id (space-id space-id))
 
@@ -202,3 +201,63 @@
 
 (defcfun ("dRSetIdentity" set-identity) :void
   (r (:pointer (:struct matrix3))))
+
+;;
+;;   Contacts
+;;
+
+(defctype joint-id :pointer)
+(defctype joint-group-id :pointer)
+
+
+(defcstruct surface-parameters
+  (mode :int)
+  (mu ode-real :count 2)
+  (rho ode-real :count 3)
+  (bounce ode-real :count 2)
+  
+  (soft-erp ode-real)
+  (soft-cfm ode-real)
+  
+  (motion ode-real :count 3)
+  (slip ode-real :count 2))
+
+
+(defcstruct contact-geom
+  (position (:struct vector3))
+  (normal (:struct vector3))
+  (depth ode-real)
+  (geoms geom-id :count 2)
+  (sides :int :count 2))
+
+
+(defcstruct contact 
+  (surface (:struct surface-parameters))
+  (contact-geom (:struct contact-geom))
+  (fdir (:struct vector3)))
+
+
+(defcfun ("dJointCreateContact" create-contact) joint-id
+  (world-id world-id)
+  (joint-group-id joint-group-id)
+  (contact (:pointer (:struct contact))))
+
+;;
+;;  Joint Groups
+;; 
+(defcfun ("dJointGroupCreate" create-joint-group) joint-group-id
+  (max-size :int))
+
+(defcfun ("dJointGroupDestroy" destroy-joint-group) :void
+  (joint-group-id joint-group-id))
+
+
+;; Clear
+(defcfun ("dJointGroupEmpty" clear-joint-group) :void
+  (joint-group-id joint-group-id))
+
+
+(defcfun ("dJointAttach" attach-joint) :void
+  (joint-id joint-id)
+  (body-id-1 body-id)
+  (body-id-2 body-id))
