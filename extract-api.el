@@ -28,7 +28,7 @@
 
 (defun trim (string)
   (setq string (replace-regexp-in-string "^\\(\n\\|\\s-\\)+" "" string))
-  (setq string (replace-regexp-in-string "\\(\n\\|\\s-\\)$" "" string))
+  (setq string (replace-regexp-in-string "\\(\n\\|\\s-\\)+$" "" string))
   string)
 
 
@@ -38,11 +38,14 @@
 ;;
 
 (defun ctype (string &optional array)
-  (if (string-match "\\(const\\s-+\\)?\\([a-zA-Z0-9]+\\)" string)
-      (if (or array (search "*" string))
-          (list :pointer (trim (match-string 2 string)))
-        (trim (match-string 2 string))) 
-    (trim string)))
+  (setq string (trim string))
+  (if (string-match "const\\s-+char\\s-*\\*\\s-*" string)
+      :string
+    (if (string-match "\\(const\\s-+\\)?\\([a-zA-Z0-9 \\t]+\\)" string)
+        (if (or array (search "*" string))
+            (list :pointer (trim (match-string 2 string)))
+          (trim (match-string 2 string)))
+      (trim string))))
 
 
 (defun cfun-arg (arg)
@@ -81,10 +84,12 @@
       (error "Not a valid function %s" string))
     (setq fun (match-string 1 string))
     (setq args (match-string 2 string))
-    (setq parts (split fun))
-    (list :return-type (ctype (nth 0 parts))
-          :name (trim (nth 1 parts))
-          :args (cfun-args args))))
+
+    ;; Pretend that the function + return type are an arg declaration
+    ;; and parse like that
+    (append (mapcar (lambda (x) (if (eq x :type) :return-type x))
+                    (cfun-arg fun))
+            (list :args (cfun-args args)))))
 
 
 (defun list-ode-headers (&optional ode-dir)
@@ -121,10 +126,12 @@
                              (list-ode-headers ode-dir)))
     (setq ode-api (mapcar #'header-to-ode-api headers))
   
-    (switch-to-buffer-other-window "ode-api")
+    (switch-to-buffer "ode-api")
     (with-current-buffer "ode-api"
       (erase-buffer)
-      (prin1 ode-api (current-buffer)))))
+      (prin1 ode-api (current-buffer))
+      (write-file "ode-api.lisp" nil)
+      (kill-buffer))))
 
 
 (generate-ode-api)
