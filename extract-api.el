@@ -115,12 +115,16 @@
   "Generate the API declaration for ODE"
   (let (ode-api headers)
 
-    (setq headers (list-ode-headers ode-dir))
+    (setq headers (remove-if (lambda (h)
+                               (or (search "threading" h)
+                                   (search "legacy" h)))
+                             (list-ode-headers ode-dir)))
     (setq ode-api (mapcar #'header-to-ode-api headers))
   
     (switch-to-buffer-other-window "ode-api")
     (with-current-buffer "ode-api"
       (erase-buffer)
       (prin1 ode-api (current-buffer)))))
+
 
 (generate-ode-api)
