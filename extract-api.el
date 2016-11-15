@@ -9,9 +9,12 @@
 ;; 
 (defun all-matches (regex string &optional start)
   "Find all matches of regex in string, returning it as a list"
-  (if (string-match regex string (or start 0))
-        (cons (match-string-no-properties 0 string) (all-matches regex string (match-end 0)))
-      nil))
+  (let ((next (or start 0))
+        result)
+    (while (string-match regex string next)
+      (setq next (match-end 0))
+      (push (match-string-no-properties 0 string) result))
+    result))
 
 
 (defun split (string)
@@ -68,4 +71,4 @@
       (erase-buffer)
       (prin1 ode-api (current-buffer)))))
 
-;(generate-ode-api)
+(generate-ode-api)
