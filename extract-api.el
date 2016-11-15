@@ -21,20 +21,33 @@
   (all-matches "\\S-+" string))
 
 
+(defun comma-split (string)
+  (all-matches "[^,]+" string))
+
+(defun trim (string)
+  (if (string-match "^\\s-*\\(.*?\\)\\s-*$" string)
+      (match-string 1 string)
+    string))
+
 ;;
 ;;  ODE API parsing
 ;;
 
-(defvar ode-arg-list-regex "\\s-*\\([a-zA-Z0-9]+\\)\\(\\*\?\\s-\\*\?\\)\\([a-zA-Z]+\\)\\s-*")
+(defun ctype (string)
+  (if (string-match "\\(const\\s-+\\)?\\([a-zA-Z0-9]+\\)" string)
+      (if (search "*" string)
+          (list :pointer (trim (match-string 2 string)))
+        (trim (match-string 2 string))) 
+    (trim string)))
 
 (defun cfun-arg (arg)
   "Parse a C-function argument definition"
-  (string-match ode-arg-list-regex arg)
-  (list :type (if (search "*" (match-string 2 arg))
-                  (list :pointer (match-string 1 arg))
-                (match-string 1 arg)) 
-          :name (match-string 3 arg)))
-
+  (setq arg (trim arg))
+  (string-match "^\\(.+?\\)\\([a-zA-Z]+\\)$" arg)
+  (let ((type (match-string 1 arg))
+        (name (match-string 2 arg)))
+    (list :type (ctype type) 
+          :name (trim name))))
 
 (defun cfun-args (string)
   (if (string-match "^\\s-*\\([a-zA-Z]+\\)\\s-*$" string)
@@ -45,10 +58,7 @@
             (string-match "^\\s-*$" string))
         nil
 
-      (let ((m (all-matches ode-arg-list-regex string)))
-        (unless m
-          (error "Strange args list: %s" string))
-        (mapcar #'cfun-arg m)))))
+      (mapcar #'cfun-arg (comma-split string)))))
 
 
 (defun ode-cfun (string)
@@ -60,8 +70,8 @@
     (setq fun (match-string 1 string))
     (setq args (match-string 2 string))
     (setq parts (split fun))
-    (list :return-type (nth 0 parts)
-          :name (nth 1 parts)
+    (list :return-type (ctype (nth 0 parts))
+          :name (trim (nth 1 parts))
           :args (cfun-args args))))
 
 
@@ -87,7 +97,7 @@
   (let (ode-api headers)
 
     (setq headers (list-ode-headers "/usr/local/include/ode"))
-    (setq ode-api (mapcar #'header-to-ode-api (subseq headers 0 1)))
+    (setq ode-api (mapcar #'header-to-ode-api headers))
   
     (switch-to-buffer-other-window "ode-api")
     (with-current-buffer "ode-api"
