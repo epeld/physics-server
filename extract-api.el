@@ -48,6 +48,8 @@
 (defun cfun-arg (arg)
   "Parse a C-function argument definition"
   (setq arg (trim arg))
+  (setq arg (replace-regexp-in-string "/\\*.*\\*/" "" arg))
+  (setq arg (trim arg))
   (if (equal (subseq arg (- (length arg) 1)) "*")
       (ctype arg)
     (progn
