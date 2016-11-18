@@ -54,19 +54,21 @@
   (setq arg (replace-regexp-in-string "/\\*.*\\*/" "" arg))
   (setq arg (trim arg))
   (if (equal (subseq arg (- (length arg) 1)) "*")
-      (ctype arg)
-    (progn
-      (string-match "^\\(.+?\\)\\([a-zA-Z0-9]+\\)\\(\\[[0-9]\\]\\)?$" arg)
-      (let ((type (match-string 1 arg))
-            (name (match-string 2 arg)))
-        (list :type (ctype type (match-string 3 arg)) 
-              :name (trim name))))))
-
+      (list :type (ctype arg))
+    (if (string-match "^\\(const\\s-+\\)?\\([a-zA-Z0-9]+\\)$" arg)
+        (list :type (ctype arg))
+      (progn
+        (string-match "^\\(.+?\\)\\([a-zA-Z0-9_]+\\)\\(\\[[0-9]\\]\\)?$" arg)
+        (let ((type (match-string 1 arg))
+              (name (match-string 2 arg)))
+          (list :type (ctype type (match-string 3 arg)) 
+                :name (trim name)))))))
+;(cfun-args "dGeomID geom,const dQuaternion")
 
 (defun cfun-args (string)
   (if (string-match "^\\s-*\\([a-zA-Z]+\\)\\( \\*?\\)\\s-*$" string)
-      (list :type (ctype (concat (match-string 1 string) (match-string 2 string)))
-            :name "arg1")
+      (list (list :type (ctype (concat (match-string 1 string) (match-string 2 string)))
+                  :name "arg1"))
     
     (if (or (string-match "^\\s-*void\\s-*$" string)
             (string-match "^\\s-*$" string))
@@ -111,7 +113,8 @@
           :functions (mapcar #'ode-cfun (remove-if (lambda (s) (or (search "..." s)
                                                                    (search "dPrintMatrix" s)
                                                                    (search "UseSharedWorkingMemory" s)
-                                                                   (search "ReservationPolicy" s)))
+                                                                   (search "ReservationPolicy" s)
+                                                                   (search "DEPRECATED" s)))
                                                    m)))))
 
 
