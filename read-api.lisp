@@ -4,8 +4,48 @@
 ;; 
 
 
-(defparameter api
+(defparameter interface-data
   (with-open-file (s "~/Documents/Code/physics-server/ode-api.lisp")
     (read s)))
+
+
+(defun unpointerify (type-decl)
+  "Keep normal type declarations intact but remove pointer declarations"
+  (if (and (consp type-decl)
+           (eq :pointer (first type-decl)))
+      (second type-decl)
+      type-decl))
+
+
+(defun get-arg-type (x)
+  (getf (the list x) :type))
+
+
+(defun get-fun-arg-types (f)
+  (mapcar #'get-arg-type (getf f :args)))
+
+
+(defun types (&optional (api (first interface-data)))
+  "Figure out the set of all possible types that we need to support for this api"
+  (the list api)
+  (let ((arg-types (loop for f in (getf api :functions)
+                      nconc (get-fun-arg-types f)))
+        (return-types (loop for f in (getf api :functions)
+                         collect (getf f :return-type))))
+    
+    (remove-duplicates (mapcar #'unpointerify (append return-types arg-types))
+                              :test #'equal)))
+
+
+;(loop for f in interface-data nconc (types f))
+;(types (car interface-data))
+
+;(types (ninth interface-data))
+
+;(first api)
+
+
+
+
 
 
