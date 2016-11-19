@@ -8,9 +8,6 @@
    
 (cffi:use-foreign-library libode)
 
-;; These types need to be supported:
-(quote ( "dContactGeom" "dJointType" "dMass" "dContact" "dJointFeedback"))
-
 
 ;; Define a translation that removes the prefixed "d" and keeps "ID" intact 
 (defmethod cffi:translate-name-from-foreign ((spec string)
@@ -24,7 +21,7 @@
       
       ;; Use subseq to remove the prefixed "d"
       (let ((name (cffi:translate-camelcase-name (subseq spec 1)
-                                                 :special-words '("ID"))))
+                                                 :special-words '("ID" "ERP" "CFM" "ODE" "2D" "PR" "PU"))))
         (if varp (intern (format nil "*~a*" name)) name))))
 
 
@@ -111,3 +108,95 @@
 
 (cffi:defcstruct quaternion
   (value ode-real :count 4))
+
+;;
+;; Joint Stuff
+;;
+(cffi:defcstruct surface-parameters
+  (mode :int)
+  (mu ode-real :count 2)
+  (rho ode-real :count 3)
+  (bounce ode-real :count 2)
+  
+  (soft-erp ode-real)
+  (soft-cfm ode-real)
+  
+  (motion ode-real :count 3)
+  (slip ode-real :count 2))
+
+
+(cffi:defcstruct contact-geom
+  (position (:struct vector-3))
+  (normal (:struct vector-3))
+  (depth ode-real)
+  (geoms geom-id :count 2)
+  (sides :int :count 2))
+
+
+(cffi:defcstruct contact 
+  (surface (:struct surface-parameters))
+  (contact-geom (:struct contact-geom))
+  (fdir (:struct vector-3)))
+
+
+;;
+;;  Joint Types
+;; 
+
+(defmacro def-joint-types ()
+  (let ((types '("dJointTypeNone"
+                 "dJointTypeBall"
+                 "dJointTypeHinge"
+                 "dJointTypeSlider"
+                 "dJointTypeContact"
+                 "dJointTypeUniversal"
+                 "dJointTypeHinge2"
+                 "dJointTypeFixed"
+                 "dJointTypeNull"
+                 "dJointTypeAMotor"
+                 "dJointTypeLMotor"
+                 "dJointTypePlane2D"
+                 "dJointTypePR"
+                 "dJointTypePU"
+                 "dJointTypePiston"
+                 "dJointTypeDBall"
+                 "dJointTypeDHinge"
+                 "dJointTypeTransmission")))
+    `(cffi:defcenum joint-type
+       ,@ (mapcar (lambda (x)
+                    (intern (string (cffi:translate-name-from-foreign x *package*)) (find-package :keyword)))
+                  types))))
+
+(def-joint-types)
+
+;;
+;;  Mass
+;;
+
+;; struct dMass {
+;;   dReal mass;
+;;   dVector3 c;
+;;   dMatrix3 I;
+
+(cffi:defcstruct mass
+  (mass ode-real)
+  (c (:struct vector-3))
+  (i (:struct matrix-3)))
+
+
+;;
+;;  Joint feedback
+;;
+
+;; typedef struct dJointFeedback {
+;;   dVector3 f1;		/* force applied to body 1 */
+;;   dVector3 t1;		/* torque applied to body 1 */
+;;   dVector3 f2;		/* force applied to body 2 */
+;;   dVector3 t2;		/* torque applied to body 2 */
+;; } dJointFeedback;
+
+(cffi:defcstruct joint-feedback
+  (f1 (:struct vector-3))
+  (t1 (:struct vector-3))
+  (f2 (:struct vector-3))
+  (t2 (:struct vector-3)))
