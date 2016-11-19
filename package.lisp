@@ -18,3 +18,12 @@
 (defpackage :peldan.physics
   (:nicknames :physics)
   (:use :cl))
+
+(defpackage :peldan.low-level-ode
+  (:nicknames :low-level)
+  (:use :cl))
+
+(defpackage :peldan.c-api-info
+  (:nicknames :c-api-info)
+  (:export :all-id-types)
+  (:use :cl :cffi))
