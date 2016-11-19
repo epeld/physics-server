@@ -4,9 +4,34 @@
 ;; 
 
 
+(defparameter builtins
+  '("char"
+    "short"
+    "float"
+    "double"
+    "int"
+    "void"
+    "long"
+    "file")
+  
+  "List of built-in C data types")
+
+
 (defparameter interface-data
   (with-open-file (s "~/Documents/Code/physics-server/ode-api.lisp")
-    (read s)))
+    (read s))
+
+  "A data structure representing the C-interface")
+
+
+(defparameter excluded-modules
+  '("odecpp"
+    "odecpp_collision"
+    "threading"
+    "timer"
+    "memory")
+
+  "Modules we are not interested in interfacing with")
 
 
 (defun unpointerify (type-decl)
@@ -25,20 +50,71 @@
   (mapcar #'get-arg-type (getf f :args)))
 
 
-(defun types (&optional (api (first interface-data)))
+(defun remove-equal-duplicates (x)
+    (remove-duplicates x :test #'equal))
+
+
+(defun types (&optional (module (first interface-data)))
   "Figure out the set of all possible types that we need to support for this api"
-  (the list api)
-  (let ((arg-types (loop for f in (getf api :functions)
+  (the list module)
+  (let ((arg-types (loop for f in (getf module :functions)
                       nconc (get-fun-arg-types f)))
-        (return-types (loop for f in (getf api :functions)
+        (return-types (loop for f in (getf module :functions)
                          collect (getf f :return-type))))
     
-    (remove-duplicates (mapcar #'unpointerify (append return-types arg-types))
-                              :test #'equal)))
+    (mapcar #'unpointerify (append return-types arg-types))))
 
 
-;(loop for f in interface-data nconc (types f))
-;(types (car interface-data))
+
+(defun convert-builtin (type-decl)
+  "Convert a builtin C type declaration from string to keyword"
+  
+  (cond
+    ;; 
+    ;; Special cases
+    ((eq :string type-decl)
+     :string)
+
+    ;; 
+    ;; Unsigned?
+    ((string-equal "unsigned" type-decl) ; Match the string verbatim
+     :unsigned-int)
+
+    ;; match the substring
+    ((search "unsigned" type-decl)
+     (let ((type (convert-builtin (subseq type-decl (length "unsigned ")))))
+       (when type 
+         (find-symbol (string-upcase (format nil "unsigned-~a" type)) (find-package :keyword)))))
+
+    ;; 
+    ;; Default case: Look for builtin
+    ((find type-decl builtins :test #'string-equal)
+     (find-symbol (string-upcase type-decl) (find-package :keyword)))))
+
+
+(defun get-modules (&optional (api interface-data))
+  "Extract all interesting modules from the interface data"
+  (remove-if (lambda (m)
+               (find (getf m :name) excluded-modules :test #'string-equal))
+             interface-data))
+
+
+(defun all-builtin-types (&optional (modules (get-modules)))
+  "List all types in the C-interface"
+  (let ((strings (remove-equal-duplicates (loop for f in modules nconc (types f)))))
+    (remove-if #'null (mapcar #'convert-builtin strings))))
+
+
+(defun all-custom-types (&optional (modules (get-modules)))
+  "List all types in the C-interface"
+  (let ((strings (remove-equal-duplicates (loop for f in modules nconc (types f)))))
+    (remove-if #'convert-builtin strings)))
+
+(get-modules)
+interface-data
+
+(all-builtin-types)
+(all-custom-types)
 
 ;(types (ninth interface-data))
 
