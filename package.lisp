@@ -19,7 +19,8 @@
 (defpackage :peldan.low-level-ode
   (:nicknames :low-level :ode)
   (:export :geom-id :world-id :space-id :ode-real
-           :contact :contact-geom :geoms)
+           :contact :contact-geom :geoms
+           :surface :geom :fdir)
   (:use :cl))
 
 (defpackage :peldan.c-api-info

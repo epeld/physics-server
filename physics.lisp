@@ -7,12 +7,6 @@
    (contacts :accessor contact-group :documentation "Collision contacts between objects")))
 
 
-(defun collision-check (simulation)
-  "Perform collision checking, adding joints as needed"
-  (clear-contacts simulation)
-  (ode:space-collide (simulation-space simulation) simulation #'near-callback))
-
-
 ;; This is the callback when two objects are potentially colliding
 ;; Transcribed from ODE demo projects
 (cffi:defcallback near-callback :void
@@ -46,8 +40,8 @@
             (unless (zerop n)
               (loop for index from 0 upto (- n 1) with contact = (cffi:mem-aptr contact '(:struct contact) index) do
 
-                   (cffi:with-foreign-slots (((:pointer geom) surface fdir) contact '(:struct contact))
-                     (cffi:with-foreign-slots (((:pointer geoms)) geom '(:struct contact-geom))
+                   (cffi:with-foreign-slots (((:pointer geom) surface fdir) contact (:struct contact))
+                     (cffi:with-foreign-slots (((:pointer geoms)) geom (:struct contact-geom))
                        
                        ;; TODO adjust surface params before attaching joint
                        (joint-attach (joint-create-contact world contact-group contact)
@@ -55,17 +49,10 @@
                                      (cffi:mem-aref geoms 'geom-id 1)))))))))))
 
 
+(defun simulate (simulation &optional (count 3))
+  (with-slots (world space step-size contact-group) simulation
+    (loop repeat count do
+         (space-collide space 0 (cffi:callback near-callback))
+         (world-quick-step world step-size)
+         (joint-group-empty contact-group))))
 
-(defun step (simulation)
-  "Step the simulation forward"
-  :todo)
-
-
-(defun simulate (simulation)
-  (collision-check simulation)
-  (step simulation))
-
-;; TODO define object creation functions:
-;; (make-box)
-;; (make-sphere)
-;; etc
