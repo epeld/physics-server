@@ -9,21 +9,20 @@
   (:use :cl)
   (:export :defun-pointer-converters))
 
-
 (defpackage :peldan.ode
-  (:nicknames :ode)
   (:use :cl :cffi))
-
 
 (defpackage :peldan.physics
   (:nicknames :physics)
-  (:use :cl))
+  (:use :cl :ode))
 
 (defpackage :peldan.low-level-ode
-  (:nicknames :low-level)
+  (:nicknames :low-level :ode)
+  (:export :geom-id :world-id :space-id :ode-real
+           :contact :contact-geom :geoms)
   (:use :cl))
 
 (defpackage :peldan.c-api-info
   (:nicknames :c-api-info)
-  (:export :all-id-types :all-defuns)
+  (:export :all-id-types :all-defuns :all-function-symbols)
   (:use :cl :cffi))

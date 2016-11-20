@@ -216,3 +216,5 @@
 
 (define-api)
 
+;; Export API
+(export (c-api-info:all-function-symbols))

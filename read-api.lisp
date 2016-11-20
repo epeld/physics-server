@@ -208,6 +208,11 @@
      (loop for f in (module-functions module) collect
           (make-defun f))))
 
+(defun all-function-symbols ()
+  (loop for module in (get-modules) nconc
+       (loop for f in (module-functions module) collect
+            (cffi:translate-name-from-foreign (function-name f) *package*))))
+
 
 
 ;interface-data
