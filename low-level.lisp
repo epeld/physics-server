@@ -76,6 +76,9 @@
            ((err-num :int)
             (msg :string))))
 
+(cffi:defctype near-callback :pointer)
+(cffi:defctype collider-fn :pointer)
+(cffi:defctype message-function :pointer)
 
 ;;
 ;; Math stuff
@@ -200,3 +203,16 @@
   (t1 (:struct vector-3))
   (f2 (:struct vector-3))
   (t2 (:struct vector-3)))
+
+
+;;
+;; Definition of the API
+;;
+
+(cffi:defctype :file :pointer)
+
+(defmacro define-api ()
+  `(progn ,@(c-api-info:all-defuns)))
+
+(define-api)
+

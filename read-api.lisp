@@ -125,6 +125,9 @@
              interface-data))
 
 
+;;
+;;  Type info
+;; 
 (defun all-builtin-types (&optional (modules (get-modules)))
   "List all types in the C-interface"
   (let ((strings (remove-equal-duplicates (loop for m in modules nconc (types m)))))
@@ -149,16 +152,67 @@
 (defun all-id-types (&optional (modules (get-modules)))
   (remove-if-not (lambda (x) (search "ID" x)) (all-custom-types)))
 
+;;
+;;  API generation
+;; 
+
+(defun function-name (fun)
+  "Extract the name string of a function"
+  (getf fun :name))
+
+
+(defun c-type-to-lisp-type (type)
+  (cond ((and (consp type)
+              (eql (first type)  :pointer))
+         `(:pointer ,(c-type-to-lisp-type (second type))))
+
+
+        ((convert-builtin type))
+
+        ;; This converts e.g dWorldID -> world-id
+        ((cffi:translate-name-from-foreign (the string type) *package*))))
+
+
+(defun function-return-type (fun)
+  (c-type-to-lisp-type (getf fun :return-type)))
+
+
+(defun arg-type (arg)
+  (or (getf arg :type)
+      (error "Missing type in ~a" arg)))
+
+
+(defun arg-name (arg index)
+  (or (getf arg :name)
+      (format nil "arg-~a" index)))
+
+;(loop for i in (list 1 2 3) for j from 1 upto 100 collect (list i j))
+
+(defun function-args (fun)
+  (let ((args (getf fun :args)))
+    (loop for arg in args for ix from 1 upto (length args) collect
+         `(,(intern (string-upcase (arg-name arg ix)) ) ,(c-type-to-lisp-type (arg-type arg))))))
+
+(defun make-defun (fun)
+  (declare (optimize debug))
+  (let ((rt (function-return-type fun))
+        (name (function-name fun))
+        (args (function-args fun)))
+    
+    `(cffi:defcfun ,name ,rt
+       ,@args)))
+
+
+(defun all-defuns ()
+  (loop for module in (get-modules) nconc
+     (loop for f in (module-functions module) collect
+          (make-defun f))))
+
+
+
 ;interface-data
 
 ;; (all-builtin-types)
 ;; (all-callback-types)
 ;; (all-id-types)
 ;; (all-custom-types)
-
-
-
-
-
-
-

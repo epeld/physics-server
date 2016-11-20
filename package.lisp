@@ -25,5 +25,5 @@
 
 (defpackage :peldan.c-api-info
   (:nicknames :c-api-info)
-  (:export :all-id-types)
+  (:export :all-id-types :all-defuns)
   (:use :cl :cffi))
