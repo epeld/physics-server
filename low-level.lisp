@@ -138,7 +138,7 @@
 
 (cffi:defcstruct contact 
   (surface (:struct surface-parameters))
-  (contact-geom (:struct contact-geom))
+  (geom (:struct contact-geom))
   (fdir (:struct vector-3)))
 
 

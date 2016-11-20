@@ -31,27 +31,26 @@
   (if (or (geom-is-space object1)
           (geom-is-space object1))
       (space-collide-2 object1 object2 simulation (cffi:callback near-callback))
+      
+      (with-slots (world contact-group) simulation
+        (cffi:with-foreign-object (contact '(:struct contact) 32)
+          
+          (let ((n (ode:collide object1 object2
+                                32
+                                (cffi:foreign-slot-pointer contact '(:struct contact) 'contact-geom)
+                                (cffi:foreign-type-size '(:struct contact)))))
+            
+            (unless (zerop n)
+              (loop for index from 0 upto (- n 1) with contact = (cffi:mem-aptr contact '(:struct contact) index) do
 
-      (cffi:with-foreign-object (contact '(:struct ode:contact) 32)
-        (let ((n (ode:collide object1 object2
-                              32
-                              (cffi:foreign-slot-pointer contact '(:struct contact) 'contact-geom)
-                              (cffi:foreign-type-size '(:struct contact)))))
-          (unless (zerop n)
-            (loop for index from 0 upto (- n 1) do
+                   (cffi:with-foreign-slots (((:pointer geom) surface fdir) contact '(:struct contact))
+                     (cffi:with-foreign-slots (((:pointer geoms)) geom '(:struct contact-geom))
+                       
+                       ;; TODO adjust surface params before attaching joint
+                       (joint-attach (joint-create-contact world contact-group contact)
+                                     (cffi:mem-aref geoms 'geom-id 0)
+                                     (cffi:mem-aref geoms 'geom-id 1)))))))))))
 
-                 (let* ((contact (cffi:mem-aref contact '(:struct contact) index))
-                        (geom (cffi:foreign-slot-value contact '(:struct contact) 'contact-geom))
-                        (geoms (cffi:foreign-slot-value geom '(:struct contact-geom) 'geoms))
-
-                        ;; TODO go ahead and adjust the contact params here later
-                        (joint (joint-create-contact (simulation-world simulation)
-                                                     (contact-group simulation)
-                                                     (cffi:mem-aptr contact '(:struct contact)))))
-                   
-                   (joint-attach joint
-                                 (cffi:mem-aref geoms 'geom-id 0)
-                                 (cffi:mem-aref geoms 'geom-id 1)))))))))
 
 
 (defun step (simulation)
