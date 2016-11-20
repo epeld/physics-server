@@ -28,10 +28,13 @@
   (assert object1)
   (assert object2)
 
+  ;; Determine if space collision or object collision
   (if (or (geom-is-space object1)
           (geom-is-space object1))
+      ;; Space collide
       (space-collide-2 object1 object2 simulation (cffi:callback near-callback))
-      
+
+      ;; Object collide
       (with-slots (world contact-group) simulation
         (cffi:with-foreign-object (contact '(:struct contact) 32)
           
