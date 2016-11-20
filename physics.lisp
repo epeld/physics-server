@@ -52,7 +52,7 @@
 (defun simulate (simulation &optional (count 3))
   (with-slots (world space step-size contact-group) simulation
     (loop repeat count do
-         (space-collide space 0 (cffi:callback near-callback))
+         (space-collide space simulation (cffi:callback near-callback))
          (world-quick-step world step-size)
          (joint-group-empty contact-group))))
 
